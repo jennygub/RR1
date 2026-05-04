@@ -80,15 +80,17 @@ begin
     links[idx];
 end;
 $$;
+
 2.	Create a GitHub project with the following structure:
 your-repo/
-index.html
-package.json
-netlify.toml
-netlify/
-functions/
-assign.js
-3.	The contents of the files:
+  index.html
+  package.json
+  netlify.toml
+  netlify/
+    functions/
+      assign.js
+
+4.	The contents of the files:
 a.	Index.html
 <!DOCTYPE html>
 <html lang="en">
@@ -345,10 +347,13 @@ exports.handler = async function (event) {
     });
   }
 };
+
 4.	Deploy the GitHub repo to Netlify
+
 5.	Define Netlify environment variables:
 SUPABASE_URL (Project URL)
 SUPABASE_SERVICE_ROLE_KEY (Found under settings  API Keys)
+
 6.	After defining the variables – redeploy the repo
 
 In order to view the assignments, run in SQL Editor in Supabase:
