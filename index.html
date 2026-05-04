@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Experiment Assignment</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 520px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.4;
+    }
+
+    h2 {
+      margin-bottom: 8px;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    input[type="tel"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .consent-box {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid #ddd;
+    }
+
+    .consent-box label {
+      display: inline;
+      font-weight: normal;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .msg {
+      margin-top: 14px;
+      color: #444;
+    }
+
+    .error {
+      color: #b00020;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Start Experiment</h2>
+  <p>Please enter the last 4 digits of your ID and confirm consent.</p>
+
+  <form id="assignmentForm">
+
+    <label for="id4">Last 4 digits of ID</label>
+    <input
+      type="tel"
+      id="id4"
+      name="id4"
+      inputmode="numeric"
+      maxlength="4"
+      minlength="4"
+      pattern="[0-9]{4}"
+      placeholder="1234"
+      required
+    />
+
+    <div class="consent-box">
+      <input type="checkbox" id="consent" name="consent" required />
+      <label for="consent">
+        I declare that I work on my own, without other participants and/or tools except Base44 and those approved by the lecturer.<!-- replace with your text -->
+      </label>
+    </div>
+
+    <button type="submit" id="submitBtn">Continue</button>
+
+  </form>
+
+  <div class="msg" id="msg"></div>
+
+  <script>
+    document.getElementById("assignmentForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const msg = document.getElementById("msg");
+      const btn = document.getElementById("submitBtn");
+
+      msg.className = "msg";
+      msg.textContent = "";
+
+      const id4 = document.getElementById("id4").value.trim();
+      const consentChecked = document.getElementById("consent").checked;
+
+      // validation
+      if (!/^[0-9]{4}$/.test(id4)) {
+        msg.className = "msg error";
+        msg.textContent = "Please enter exactly 4 digits.";
+        return;
+      }
+
+      if (!consentChecked) {
+        msg.className = "msg error";
+        msg.textContent = "Please check the consent box.";
+        return;
+      }
+
+      btn.disabled = true;
+      msg.textContent = "Assigning and redirecting...";
+
+      try {
+        const response = await fetch("/.netlify/functions/assign", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            id4: id4,
+            consent: consentChecked
+          })
+        });
+
+        // SAFE parsing (fix for your error)
+        const rawText = await response.text();
+
+        let result;
+        try {
+          result = rawText ? JSON.parse(rawText) : {};
+        } catch (e) {
+          throw new Error("Server returned non-JSON response: " + rawText);
+        }
+
+        if (!response.ok) {
+          throw new Error(result.error || rawText || "Assignment failed.");
+        }
+
+        if (!result.redirectLink) {
+          throw new Error("No redirect link received from server.");
+        }
+
+        // redirect
+        window.location.href = result.redirectLink;
+
+      } catch (err) {
+        msg.className = "msg error";
+        msg.textContent = err.message || "Something went wrong. Please try again.";
+        btn.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>
