@@ -15,20 +15,20 @@ exports.handler = async function (event) {
     }
 
     if (!process.env.SUPABASE_URL) {
-      return json(500, { error: "Missing SUPABASE_URL in Netlify environment variables" });
+      return json(500, { error: "Missing SUPABASE_URL" });
     }
 
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return json(500, { error: "Missing SUPABASE_SERVICE_ROLE_KEY in Netlify environment variables" });
+      return json(500, { error: "Missing SUPABASE_SERVICE_ROLE_KEY" });
     }
 
     const body = JSON.parse(event.body || "{}");
 
-    const id4 = String(body.id4 || "").trim();
+    const studentId = String(body.studentId || "").trim();
     const consent = body.consent === true;
 
-    if (!/^[0-9]{4}$/.test(id4)) {
-      return json(400, { error: "Please enter exactly 4 digits." });
+    if (!/^[0-9]{7,9}$/.test(studentId)) {
+      return json(400, { error: "Please enter an ID with 7 to 9 digits." });
     }
 
     if (!consent) {
@@ -41,7 +41,7 @@ exports.handler = async function (event) {
     );
 
     const { data, error } = await supabase.rpc("assign_next_experiment", {
-      p_id4: id4,
+      p_student_id: studentId,
       p_consent: consent
     });
 
@@ -55,15 +55,14 @@ exports.handler = async function (event) {
     const result = Array.isArray(data) ? data[0] : data;
 
     if (!result) {
-      return json(500, {
-        error: "Supabase function returned no data"
-      });
+      return json(500, { error: "Supabase function returned no data" });
     }
 
     return json(200, {
       assignmentNumber: result.assignment_number,
       group: result.assigned_group,
-      redirectLink: result.redirect_link
+      redirectLink: result.redirect_link,
+      studentId: studentId
     });
 
   } catch (err) {
