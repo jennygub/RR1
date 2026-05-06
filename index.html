@@ -8,14 +8,10 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 520px;
+      max-width: 620px;
       margin: 40px auto;
       padding: 20px;
-      line-height: 1.4;
-    }
-
-    h2 {
-      margin-bottom: 8px;
+      line-height: 1.5;
     }
 
     label {
@@ -32,9 +28,16 @@
       box-sizing: border-box;
     }
 
+    .info-box {
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+    }
+
     .consent-box {
       margin-top: 14px;
-      padding: 12px;
+      padding: 14px;
       border: 1px solid #ddd;
     }
 
@@ -65,27 +68,39 @@
 <body>
 
   <h2>Start Experiment</h2>
-  <p>Please enter the last 4 digits of your ID and confirm consent.</p>
+
+  <div class="info-box">
+    <p>
+      INSERT YOUR PARAGRAPH TEXT HERE.
+    </p>
+
+    <p>
+      Please read the consent document here:
+      <a href="https://example.com/your-consent-document" target="_blank" rel="noopener noreferrer">
+        Open consent document
+      </a>
+    </p>
+  </div>
 
   <form id="assignmentForm">
 
-    <label for="id4">Last 4 digits of ID</label>
+    <label for="studentId">Student ID</label>
     <input
       type="tel"
-      id="id4"
-      name="id4"
+      id="studentId"
+      name="studentId"
       inputmode="numeric"
-      maxlength="4"
-      minlength="4"
-      pattern="[0-9]{4}"
-      placeholder="1234"
+      minlength="7"
+      maxlength="9"
+      pattern="[0-9]{7,9}"
+      placeholder="Enter 7-9 digit ID"
       required
     />
 
     <div class="consent-box">
       <input type="checkbox" id="consent" name="consent" required />
       <label for="consent">
-        I declare that I work on my own, without other participants and/or tools except Base44 and those approved by the lecturer.<!-- replace with your text -->
+        INSERT YOUR LONG CONSENT CHECKBOX TEXT HERE.
       </label>
     </div>
 
@@ -96,6 +111,16 @@
   <div class="msg" id="msg"></div>
 
   <script>
+    // Replace with the Google Forms entry ID for the Student ID field.
+    // Example: "entry.123456789"
+    const GOOGLE_FORM_STUDENT_ID_ENTRY = "entry.123456789";
+
+    function addStudentIdToGoogleFormUrl(baseUrl, studentId) {
+      const url = new URL(baseUrl);
+      url.searchParams.set(GOOGLE_FORM_STUDENT_ID_ENTRY, studentId);
+      return url.toString();
+    }
+
     document.getElementById("assignmentForm").addEventListener("submit", async function (e) {
       e.preventDefault();
 
@@ -105,13 +130,12 @@
       msg.className = "msg";
       msg.textContent = "";
 
-      const id4 = document.getElementById("id4").value.trim();
+      const studentId = document.getElementById("studentId").value.trim();
       const consentChecked = document.getElementById("consent").checked;
 
-      // validation
-      if (!/^[0-9]{4}$/.test(id4)) {
+      if (!/^[0-9]{7,9}$/.test(studentId)) {
         msg.className = "msg error";
-        msg.textContent = "Please enter exactly 4 digits.";
+        msg.textContent = "Please enter an ID with 7 to 9 digits.";
         return;
       }
 
@@ -131,12 +155,11 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            id4: id4,
+            studentId: studentId,
             consent: consentChecked
           })
         });
 
-        // SAFE parsing (fix for your error)
         const rawText = await response.text();
 
         let result;
@@ -147,15 +170,19 @@
         }
 
         if (!response.ok) {
-          throw new Error(result.error || rawText || "Assignment failed.");
+          throw new Error(result.details || result.error || rawText || "Assignment failed.");
         }
 
         if (!result.redirectLink) {
           throw new Error("No redirect link received from server.");
         }
 
-        // redirect
-        window.location.href = result.redirectLink;
+        const finalGoogleFormUrl = addStudentIdToGoogleFormUrl(
+          result.redirectLink,
+          studentId
+        );
+
+        window.location.href = finalGoogleFormUrl;
 
       } catch (err) {
         msg.className = "msg error";
